@@ -7,6 +7,12 @@ import (
 	"time"
 )
 
+func panicIf(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 func main() {
 	listener, err := net.Listen("tcp", "0.0.0.0:9092")
 	if err != nil {
@@ -19,8 +25,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("Writing hardcoded response with length 4 and correlation_id 7.")
-	conn.Write([]byte{0, 0, 0, 4, 0, 0, 0, 7})
+	buf := make([]byte, 100)
+	n, err := conn.Read(buf)
+	panicIf(err)
+	if n < 12 {
+		panic(fmt.Errorf("Read too few bytes! Expected at least 12 but got %d.\n", n))
+	}
+
+	correlationId := buf[8:12]
+
+	fmt.Printf("Writing response with length 4 and correlation_id %#v.", correlationId)
+	conn.Write([]byte{0, 0, 0, 4})
+	conn.Write(correlationId)
 
 	time.Sleep(5 * time.Second)
 }
