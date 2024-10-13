@@ -8,8 +8,12 @@ responding to APIVersions & Fetch API requests. Along the way, we also learn abo
 encoding and decoding messages using the Kafka wire protocol. We also learn
 about handling the network protocol, event loops, TCP sockets and more.
 
-## How to try this out
+### Running the server
 
 1. Ensure you have `go (1.22)` installed locally
 1. Run `./your_program.sh` to run your Kafka broker, which is implemented in
-   `app/server.go`.
+   `app/server.go`. The broker then listens for requests on port 9092.
+
+At the moment this kafka server only listens for APIVersions requests and
+answers with error code 35 when the requested APIVersion is invalid, or responds
+with the supported versions if the request is valid.
