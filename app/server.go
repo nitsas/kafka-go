@@ -36,7 +36,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		handleConnection(conn, errs)
+		go handleConnection(conn, errs)
 	}
 }
 
