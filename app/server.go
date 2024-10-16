@@ -109,13 +109,21 @@ func handleConnection(conn net.Conn, errs chan<- error) {
 				respMsg := bytes.NewBuffer(nil)
 				respMsg.Write(correlationIdBytes)
 				respMsg.Write([]byte{0, 0}) // error code: 0
-				respMsg.Write([]byte{2})    // length of array (+1) of APIs whose versions we'll publish
+				respMsg.Write([]byte{3})    // length of array (+1) of APIs whose versions we'll publish
+
+				// supported versions for request Fetch
+				respMsg.Write(APIKeyBytes["Fetch"])
+				respMsg.Write([]byte{0, 16}) // min version
+				respMsg.Write([]byte{0, 16}) // max version
+				respMsg.Write([]byte{0})     // _tagged_fields
 
 				// supported versions for request ApiVersions
 				respMsg.Write(APIKeyBytes["ApiVersions"])
-				respMsg.Write([]byte{0, 3})       // min version
-				respMsg.Write([]byte{0, 4})       // max version
-				respMsg.Write([]byte{0})          // _tagged_fields
+				respMsg.Write([]byte{0, 3}) // min version
+				respMsg.Write([]byte{0, 4}) // max version
+				respMsg.Write([]byte{0})    // _tagged_fields
+
+				// trailing response fields
 				respMsg.Write([]byte{0, 0, 0, 0}) // throttle time
 				respMsg.Write([]byte{0})          // _tagged_fields
 
