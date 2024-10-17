@@ -114,6 +114,62 @@ func handleConnection(conn net.Conn, errs chan<- error) {
 
 				fmt.Printf("Wrote response %#v\n", response)
 			}
+		case APIKeyVal["Fetch"]:
+			if requestAPIVersion != 16 {
+				fmt.Printf("Unexpected API version %d - expected version 16.\n", requestAPIVersion)
+
+				respMsg := bytes.NewBuffer(nil)
+				respMsg.Write(correlationIdBytes)
+				respMsg.Write([]byte{0, 35})
+
+				respMsgSize := respMsg.Len()
+				binary.BigEndian.PutUint32(respMsgSizeBytes, uint32(respMsgSize))
+
+				response := make([]byte, 0, len(respMsgSizeBytes)+respMsgSize)
+				response = append(response, respMsgSizeBytes...)
+				response = append(response, respMsg.Bytes()...)
+
+				_, err = conn.Write(response)
+				if err != nil {
+					errs <- err
+					return
+				}
+
+				fmt.Printf("Wrote response with size %d, correlation_id %#v, error code 35.\n", respMsgSize, correlationIdBytes)
+
+				continue
+			}
+
+			fmt.Printf("Got request Fetch with API version %d!\n", requestAPIVersion)
+
+			respMsg := bytes.NewBuffer(nil)
+			respMsg.Write(correlationIdBytes)
+			respMsg.Write([]byte{0}) // _tagged_fields
+
+			respMsg.Write([]byte{0, 0, 0, 0}) // throttle_time_ms
+			respMsg.Write([]byte{0, 0})       // error code: 0
+			respMsg.Write([]byte{0, 0, 0, 0}) // session_id
+
+			// responses array:
+			respMsg.Write([]byte{1}) // empty array
+
+			respMsg.Write([]byte{0}) // _tagged_fields
+
+			respMsgSize := respMsg.Len()
+			// fmt.Printf("respMsgSize: %d\n", respMsgSize)
+			binary.BigEndian.PutUint32(respMsgSizeBytes, uint32(respMsgSize))
+
+			response := make([]byte, 0, len(respMsgSizeBytes)+respMsgSize)
+			response = append(response, respMsgSizeBytes...)
+			response = append(response, respMsg.Bytes()...)
+
+			_, err = conn.Write(response)
+			if err != nil {
+				errs <- err
+				return
+			}
+
+			fmt.Printf("Wrote response %#v\n", response)
 		default:
 			err = fmt.Errorf("We only know how to respond to APIVersions requests (API key: %d)\n", APIKeyVal["ApiVersions"])
 			if err != nil {
